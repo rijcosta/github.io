@@ -71,7 +71,7 @@ self.addEventListener('fetch', function (event) {
 						console.error(response.statusText);
 					} else {
 						return caches.open(CACHE_NAME).then(function(cache) {
-							cache.put(event.request, response.clone());
+					 		cache.put(event.request, response.clone());
 							return response;
 						// if the response fails to cache, catch the error
 						}).catch(function(error) {

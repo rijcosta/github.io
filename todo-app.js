@@ -8,28 +8,90 @@ sap.ui.getCore().attachInit(function todoApp() {
 	//
 	var aTasks = {};
 
+	var url = "https://x8ki-letl-twmt.n7.xano.io/api:zDYSugTQ/teste";
+
 	function loadTasks() {
-		var json = localStorage.getItem("tasks");
-		try {
-			aTasks = JSON.parse(json) || {};
-		} catch (e) {
-			jQuery.sap.log.error(e.message);
-		}
+		/*		var json = localStorage.getItem("tasks");
+				try {
+					aTasks = JSON.parse(json) || {};
+				} catch (e) {
+					jQuery.sap.log.error(e.message);
+				}*/
+
+		caches.keys().then(function (names) {
+			for (let name of names)
+				caches.delete(name);
+		});
+	var xhr = new XMLHttpRequest();
+		xhr.onreadystatechange = function () {
+
+			// Check if fetch request is done
+			if (xhr.readyState == 4 && xhr.status == 200) {
+
+				// Parse the JSON string
+				aTasks = JSON.parse(xhr.responseText);
+				populateList();
+				// Call the showArtists(), passing in the parsed JSON string
+
+			}
+		};
+		xhr.open("GET", url);
+		xhr.send();
+
 	}
 
-	function saveTasks() {
+	function saveTasks(description) {
 		localStorage.setItem("tasks", JSON.stringify(aTasks));
+
+		const params = {
+			"Nome": description
+		}
+	var xhr = new XMLHttpRequest();
+		xhr.open("POST", url);
+		xhr.setRequestHeader('Content-type', 'application/json')
+
+		xhr.send(JSON.stringify(params))
+
+		xhr.onload = function () {
+			// Do whatever with response
+
+		}
+
 	}
 
 	function addTask(description) {
 		var id = Date.now();
-		aTasks[id] = {id: id, t: description};
-		saveTasks();
+		aTasks[id] = {
+			id: id,
+			Nome: description
+		};
+
+		saveTasks( description );
+
 		return aTasks[id];
 	}
 
 	function deleteTask(id) {
 		delete aTasks[id];
+	
+	
+		const params = {
+			"teste_id": id
+		}
+	var xhr = new XMLHttpRequest();
+		xhr.open("DELETE", url+'/'+id);
+		xhr.setRequestHeader('Content-type', 'application/json');
+
+		xhr.send(null);
+
+ 
+	
+	
+	
+	
+	
+	
+	
 		saveTasks();
 	}
 
@@ -40,7 +102,13 @@ sap.ui.getCore().attachInit(function todoApp() {
 	var oInputAddTask;
 
 	function createListItem(mTask) {
-		var listItem = new sap.m.DisplayListItem({label: mTask.t}).data("id", mTask.id);
+		var listItem = new sap.m.DisplayListItem({
+			label: mTask.Nome,
+			value: mTask.id
+		}).data("id", mTask.id);
+	
+	
+	
 		oListTodo.addAggregation("items", listItem);
 	}
 
@@ -75,14 +143,24 @@ sap.ui.getCore().attachInit(function todoApp() {
 		deleteListItem(oEvent.getParameter("listItem"));
 	}
 
-
 	//
 	// View
 	//
 	var app = new sap.m.App("myApp");
 
+	oInputAddTask = new sap.m.Input("addTaskInput", {
+		placeholder: "Adicionar Jogador",
+
+		value: "",
+		width: "80%",
+		submit: addNewTask,
+		liveChange: function (oEvent) {
+			addTaskButton.setEnabled(!!oEvent.getParameter("value"));
+		}
+	});
+
 	oListTodo = new sap.m.List({
-		inset: true,
+		inser: true,
 		mode: "Delete",
 		noDataText: "Relax, you have no tasks for today :)",
 		delete: onDeleteItem,
@@ -94,38 +172,29 @@ sap.ui.getCore().attachInit(function todoApp() {
 		items: []
 	});
 
-	oInputAddTask = new sap.m.Input("addTaskInput", {
-		placeholder: "New task..",
-		value: "",
-		width: "100%",
-		submit: addNewTask,
-		liveChange: function (oEvent) {
-			addTaskButton.setEnabled(!!oEvent.getParameter("value"));
-		}
-	});
-
 	var addTaskButton = new sap.m.Button("addTaskButton", {
 		text: "Add",
 		enabled: false,
 		press: addNewTask
 	});
-	
-	var footer = new sap.m.Toolbar("footer", {
-		content: [oInputAddTask, addTaskButton]
-	});
+
+	/*	var footer = new sap.m.Toolbar("footer", {
+			content: [oInputAddTask, addTaskButton]
+		});*/
 
 	var todoPage = new sap.m.Page("todoPage", {
 		title: "UI5 TODO Sample",
+
 		showNavButton: false,
 		showFooter: true,
 		floatingFooter: true,
-		footer: footer,
-		content: [oListTodo]
+		//	footer: footer,
+		content: [oInputAddTask, addTaskButton, oListTodo]
 	});
 
 	// Start application
 	loadTasks();
-	populateList();
+	//populateList();
 
 	app.addPage(todoPage);
 	app.setInitialPage("todoPage");
